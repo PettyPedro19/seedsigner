@@ -6,11 +6,11 @@ import array
 
 
 class ST7789(object):
-    """class for ST7789  240*240 1.3inch OLED displays."""
+    """class for ST7789  240*320 portrait display."""
 
     def __init__(self):
         self.width = 240
-        self.height = 240
+        self.height = 320   # It was 240, changed to achieve portrait.
 
         #Initialize DC RST pin
         self._dc = 22
@@ -45,7 +45,7 @@ class ST7789(object):
         self.reset()
 
         self.command(0x36)
-        self.data(0x70)                 #self.data(0x00)
+        self.data(0x00)                 # It was self.data(0x07). 0x70 (landscape); 0x00 = portrait 240x320.
 
         self.command(0x3A) 
         self.data(0x05)
