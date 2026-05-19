@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 # TODO: Remove all pixel hard coding
 class GUIConstants:
-    EDGE_PADDING = 8
-    COMPONENT_PADDING = 8
+    EDGE_PADDING = 10    # It was 8.
+    COMPONENT_PADDING = 10   # It was 8.
     LIST_ITEM_PADDING = 4
 
     BACKGROUND_COLOR = "#FFFFFF"
@@ -42,8 +42,8 @@ class GUIConstants:
 
     ICON_FONT_NAME__FONT_AWESOME = "Font_Awesome_6_Free-Solid-900"
     ICON_FONT_NAME__SEEDSIGNER = "seedsigner-icons"
-    ICON_FONT_SIZE = 22
-    ICON_INLINE_FONT_SIZE = 24
+    ICON_FONT_SIZE = 26     # It was 22
+    ICON_INLINE_FONT_SIZE = 28  # It was 24
     ICON_LARGE_BUTTON_SIZE = 48
     ICON_TOAST_FONT_SIZE = 30
     ICON_PRIMARY_SCREEN_SIZE = 50
@@ -59,8 +59,8 @@ class GUIConstants:
     TOP_NAV_TITLE_FONT_SIZE = {
         "default": 20,
     }
-    TOP_NAV_HEIGHT = 48
-    TOP_NAV_BUTTON_SIZE = 32
+    TOP_NAV_HEIGHT = 56     # It was 48
+    TOP_NAV_BUTTON_SIZE = 36    # It was 32
 
     BODY_FONT_NAME = {
         "default": "OpenSans-Regular",
@@ -100,7 +100,7 @@ class GUIConstants:
     }
     BUTTON_FONT_COLOR = "#FFFFFF"
     BUTTON_BACKGROUND_COLOR = "#001CE0"
-    BUTTON_HEIGHT = 32
+    BUTTON_HEIGHT = 38      # It was 32
     BUTTON_SELECTED_FONT_COLOR = BACKGROUND_COLOR
     
     NOTIFICATION_COLOR = "#00F100"
