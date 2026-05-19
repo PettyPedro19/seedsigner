@@ -1,9 +1,19 @@
 from PIL import Image, ImageDraw
 from threading import Lock
 
-from seedsigner.hardware.ST7789 import ST7789
+from seedsigner.emulator.desktopDisplay import desktopDisplay
 from seedsigner.models.singleton import ConfigurableSingleton
 
+# Hardcoded display config for BitPolito fork (Pi Zero = ST7789 240x240)
+DISPLAY_TYPE__ST7789 = "st7789"
+DISPLAY_TYPE__ILI9341 = "ili9341"
+DISPLAY_TYPE__ILI9486 = "ili9486"
+
+ALL_DISPLAY_TYPES = [DISPLAY_TYPE__ST7789, DISPLAY_TYPE__ILI9341, DISPLAY_TYPE__ILI9486]
+
+DEFAULT_DISPLAY_TYPE   = DISPLAY_TYPE__ST7789
+DEFAULT_DISPLAY_WIDTH  = 240
+DEFAULT_DISPLAY_HEIGHT = 320    # It was 240, changed to 320 in order to get 'portrait' shape in the bigger display version.
 
 
 class Renderer(ConfigurableSingleton):
@@ -14,36 +24,57 @@ class Renderer(ConfigurableSingleton):
     draw: ImageDraw.ImageDraw = None
     disp = None
     lock = Lock()
+    is_screenshot_generator = False  # required by newer SeedSigner screensaver code
 
 
     @classmethod
     def configure_instance(cls):
-        # Instantiate the one and only Renderer instance
         renderer = cls.__new__(cls)
         cls._instance = renderer
+        renderer.initialize_display()
 
-        # Eventually we'll be able to plug in other display controllers
-        renderer.disp = ST7789()
-        renderer.canvas_width = renderer.disp.width
-        renderer.canvas_height = renderer.disp.height
 
-        renderer.canvas = Image.new('RGB', (renderer.canvas_width, renderer.canvas_height))
-        renderer.draw = ImageDraw.Draw(renderer.canvas)
+    def initialize_display(self):
+        self.lock.acquire()
+
+        # BitPolito fork does not have SETTING__DISPLAY_CONFIGURATION;
+        # hardcode ST7789 240x240 which matches the target hardware.
+        self.display_type = DEFAULT_DISPLAY_TYPE
+        width  = DEFAULT_DISPLAY_WIDTH
+        height = DEFAULT_DISPLAY_HEIGHT
+
+        if self.disp is None:
+            self.disp = desktopDisplay(self.display_type, width=width, height=height)
+        else:
+            self.disp.display_type = self.display_type
+            self.disp.width  = width
+            self.disp.height = height
+            self.disp.update_geometry()
+
+        if self.display_type == DISPLAY_TYPE__ST7789:
+            self.canvas_width  = self.disp.width
+            self.canvas_height = self.disp.height
+        elif self.display_type in [DISPLAY_TYPE__ILI9341, DISPLAY_TYPE__ILI9486]:
+            self.canvas_width  = self.disp.height
+            self.canvas_height = self.disp.width
+
+        self.canvas = Image.new('RGB', (self.canvas_width, self.canvas_height))
+        self.draw   = ImageDraw.Draw(self.canvas)
+
+        self.lock.release()
 
 
     def show_image(self, image=None, alpha_overlay=None, show_direct=False):
         if show_direct:
-            # Use the incoming image as the canvas and immediately render
             self.disp.ShowImage(image, 0, 0)
             return
 
         if alpha_overlay:
-            if image == None:
+            if image is None:
                 image = self.canvas
             image = Image.alpha_composite(image, alpha_overlay)
 
         if image:
-            # Always write to the current canvas, rather than trying to replace it
             self.canvas.paste(image)
 
         self.disp.ShowImage(self.canvas, 0, 0)
@@ -55,20 +86,18 @@ class Renderer(ConfigurableSingleton):
         rate_x = rate
         rate_y = rate
         if end_x - start_x < 0:
-            rate_x = rate_x * -1
+            rate_x *= -1
         if end_y - start_y < 0:
-            rate_y = rate_y * -1
+            rate_y *= -1
 
         while (cur_x != end_x or cur_y != end_y) and (rate_x != 0 or rate_y != 0):
             cur_x += rate_x
             if (rate_x > 0 and cur_x > end_x) or (rate_x < 0 and cur_x < end_x):
-                # We've moved too far; back up and undo that last move.
                 cur_x -= rate_x
                 rate_x = 0
 
             cur_y += rate_y
             if (rate_y > 0 and cur_y > end_y) or (rate_y < 0 and cur_y < end_y):
-                # We've moved too far; back up and undo that last move.
                 cur_y -= rate_y
                 rate_y = 0
 
@@ -77,11 +106,8 @@ class Renderer(ConfigurableSingleton):
             if alpha_overlay:
                 crop = Image.alpha_composite(crop, alpha_overlay)
 
-            # Always keep a copy of the current display in the canvas
             self.canvas.paste(crop)
-
             self.disp.ShowImage(crop, 0, 0)
-
 
 
     def display_blank_screen(self):
